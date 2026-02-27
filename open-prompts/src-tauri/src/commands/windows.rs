@@ -118,3 +118,10 @@ pub async fn close_editor_window(app: tauri::AppHandle) -> AppResult<()> {
     }
     Ok(())
 }
+
+/// Quit the entire app process.
+#[tauri::command]
+pub fn quit_app(app: tauri::AppHandle) -> AppResult<()> {
+    app.exit(0);
+    Ok(())
+}

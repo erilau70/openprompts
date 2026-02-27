@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Keyboard, Palette, Pin, Settings } from 'lucide-react';
+import { Keyboard, Palette, Pin, Play, Power, Settings } from 'lucide-react';
 import { api } from '../../services/ipc';
 import { useSettingsStore } from '../../stores/settingsStore';
 
@@ -26,6 +26,7 @@ export function SettingsPanel() {
   const { settings, save } = useSettingsStore();
   const [isRecording, setIsRecording] = useState(false);
   const [recordedHotkey, setRecordedHotkey] = useState('');
+  const [isQuitting, setIsQuitting] = useState(false);
 
   const startRecording = useCallback(async () => {
     try {
@@ -94,6 +95,33 @@ export function SettingsPanel() {
     return () => window.removeEventListener('keydown', handler, true);
   }, [cancelRecording, isRecording]);
 
+  useEffect(() => {
+    if (!settings) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const enabled = await api.getAutoLaunchEnabled();
+        if (cancelled || enabled === settings.general.autoLaunch) return;
+
+        await save({
+          ...settings,
+          general: {
+            ...settings.general,
+            autoLaunch: enabled,
+          },
+        });
+      } catch (e) {
+        console.error('Failed to sync auto-launch state:', e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [save, settings]);
+
   const handleThemeChange = useCallback(
     async (theme: 'dark' | 'light' | 'auto') => {
       if (!settings) return;
@@ -127,6 +155,35 @@ export function SettingsPanel() {
     },
     [save, settings],
   );
+
+  const handleAutoLaunch = useCallback(
+    async (value: boolean) => {
+      if (!settings) return;
+      try {
+        await api.setAutoLaunchEnabled(value);
+        await save({
+          ...settings,
+          general: {
+            ...settings.general,
+            autoLaunch: value,
+          },
+        });
+      } catch (e) {
+        console.error('Failed to update auto-launch:', e);
+      }
+    },
+    [save, settings],
+  );
+
+  const handleQuitApp = useCallback(async () => {
+    try {
+      setIsQuitting(true);
+      await api.quitApp();
+    } catch (e) {
+      console.error('Failed to quit app:', e);
+      setIsQuitting(false);
+    }
+  }, []);
 
   if (!settings) return null;
 
@@ -195,6 +252,35 @@ export function SettingsPanel() {
           />
           <span>Keep editor above other windows</span>
         </label>
+      </div>
+
+      <div className="settings-section">
+        <label className="settings-label">
+          <Play size={14} />
+          Launch at Login
+        </label>
+        <label className="settings-toggle">
+          <input
+            type="checkbox"
+            checked={settings.general.autoLaunch}
+            onChange={(event) => void handleAutoLaunch(event.target.checked)}
+          />
+          <span>Start OpenPrompts automatically when you sign in</span>
+        </label>
+      </div>
+
+      <div className="settings-section">
+        <label className="settings-label">
+          <Power size={14} />
+          App Control
+        </label>
+        <button
+          className="btn-sm btn-danger"
+          onClick={() => void handleQuitApp()}
+          disabled={isQuitting}
+        >
+          {isQuitting ? 'Quitting...' : 'Quit OpenPrompts'}
+        </button>
       </div>
     </div>
   );

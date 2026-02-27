@@ -382,3 +382,13 @@
 .btn-ghost:hover {
   background: var(--bg-hover);
 }
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
