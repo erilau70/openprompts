@@ -91,10 +91,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     try {
       const saved = await api.savePrompt(activePrompt);
       const index = await api.getIndex();
+      const currentActive = get().activePrompt;
       set({
         prompts: index.prompts,
         folders: index.folders,
         activePromptId: saved.id,
+        activePrompt: currentActive
+          ? {
+              ...currentActive,
+              id: saved.id,
+              filename: saved.filename,
+              created: saved.created,
+              updated: saved.updated,
+              useCount: saved.useCount,
+              lastUsed: saved.lastUsed,
+            }
+          : currentActive,
         dirty: false,
         saveStatus: 'saved',
       });

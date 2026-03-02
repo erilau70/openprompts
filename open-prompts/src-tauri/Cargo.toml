@@ -1,6 +1,6 @@
 [package]
 name = "open-prompts"
-version = "1.20260227.2"
+version = "1.20260302.1"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
